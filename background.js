@@ -1,16 +1,31 @@
+const DEFAULT_FILTER_KEYWORDS = [
+  'claude','codex','claude code','ai','chatgpt','perplexity',
+  'openai','anthropic','gemini','gpt','llm','cursor',
+  'copilot','midjourney','stable diffusion','sora','devin',
+  'vibe coding','agent','agi'
+];
+const DEFAULT_HIGHLIGHT_KEYWORDS = ['openclaw','manus','genspark'];
+
 const DEFAULTS = {
   enabled: true,
   collectedCount: 0,
   recentLogs: [],
   webhookUrl: "",
-  spreadsheetId: "",
-  apiKey: "",
-  useGasWebhook: true
+  filterKeywords: DEFAULT_FILTER_KEYWORDS,
+  highlightKeywords: DEFAULT_HIGHLIGHT_KEYWORDS
 };
 
 chrome.runtime.onInstalled.addListener(async () => {
-  const current = await chrome.storage.local.get(DEFAULTS);
-  await chrome.storage.local.set({ ...DEFAULTS, ...current });
+  const current = await chrome.storage.local.get(null);
+  // Only set defaults for keys that don't exist yet
+  const toSet = {};
+  for (const [key, val] of Object.entries(DEFAULTS)) {
+    if (!(key in current)) toSet[key] = val;
+  }
+  if (Object.keys(toSet).length > 0) {
+    await chrome.storage.local.set(toSet);
+    console.log("[X-Collector] Initialized defaults:", Object.keys(toSet));
+  }
 });
 
 chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
@@ -66,10 +81,17 @@ async function sendToLocal(posts) {
     const res = await fetch("http://localhost:3050/api/posts", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
+      mode: "cors",
       body: JSON.stringify({ posts })
     });
-    if (res.ok) console.log("[X-Collector] Saved", posts.length, "posts to local viewer");
-  } catch { /* viewer not running, that's fine */ }
+    if (res.ok) {
+      const data = await res.json();
+      console.log("[X-Collector] Saved", data.added, "posts to local viewer (total:", data.total, ")");
+    }
+  } catch (e) {
+    // viewer not running — silently skip
+    console.debug("[X-Collector] Local viewer not available:", e.message);
+  }
 }
 
 async function sendToGasWebhook(webhookUrl, posts) {

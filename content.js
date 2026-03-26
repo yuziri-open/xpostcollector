@@ -1,7 +1,15 @@
+const DEFAULT_FILTER_KEYWORDS = [
+  'claude','codex','claude code','ai','chatgpt','perplexity',
+  'openai','anthropic','gemini','gpt','llm','cursor',
+  'copilot','midjourney','stable diffusion','sora','devin',
+  'vibe coding','agent','agi'
+];
+const DEFAULT_HIGHLIGHT_KEYWORDS = ['openclaw','manus','genspark'];
+
 const DEFAULTS = {
   enabled: true,
-  filterKeywords: [],
-  highlightKeywords: []
+  filterKeywords: DEFAULT_FILTER_KEYWORDS,
+  highlightKeywords: DEFAULT_HIGHLIGHT_KEYWORDS
 };
 
 let filterKeywords = [];
@@ -105,11 +113,19 @@ async function flushBatch() {
   const posts = batchQueue.splice(0, batchQueue.length);
 
   try {
-    console.log("[X-Collector] Flushing", posts.length, "posts");
-    const result = await chrome.runtime.sendMessage({ type: "submit-posts", posts });
-    console.log("[X-Collector] Flush result:", result);
+    if (chrome.runtime && chrome.runtime.sendMessage) {
+      console.log("[X-Collector] Flushing", posts.length, "posts");
+      const result = await chrome.runtime.sendMessage({ type: "submit-posts", posts });
+      console.log("[X-Collector] Flush result:", result);
+    } else {
+      console.warn("[X-Collector] chrome.runtime unavailable, extension may need reload");
+    }
   } catch (error) {
-    console.warn("[X-Collector] flushBatch error", error);
+    console.warn("[X-Collector] flushBatch error", error.message);
+    // Extension context invalidated — page needs refresh
+    if (error.message && error.message.includes('Extension context invalidated')) {
+      console.warn("[X-Collector] Extension was reloaded. Please refresh this page.");
+    }
   }
 }
 
