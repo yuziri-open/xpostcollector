@@ -50,12 +50,26 @@ async function handleSubmitPosts(posts) {
     recentLogs: mergedLogs
   });
 
-  // Send to GAS Webhook
+  // Send to local viewer app (always, non-blocking)
+  sendToLocal(accepted).catch(e => console.debug("local save skipped", e));
+
+  // Send to GAS Webhook (optional)
   if (settings.webhookUrl) {
     sendToGasWebhook(settings.webhookUrl, accepted).catch(e => console.warn("webhook failed", e));
   }
 
   return { accepted: accepted.length };
+}
+
+async function sendToLocal(posts) {
+  try {
+    const res = await fetch("http://localhost:3050/api/posts", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ posts })
+    });
+    if (res.ok) console.log("[X-Collector] Saved", posts.length, "posts to local viewer");
+  } catch { /* viewer not running, that's fine */ }
 }
 
 async function sendToGasWebhook(webhookUrl, posts) {
