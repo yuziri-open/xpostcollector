@@ -17,6 +17,19 @@
 
 ---
 
+## Screenshots
+
+<p align="center">
+  <img src="screenshots/popup.png" alt="Chrome Extension Popup" width="320" />
+  &nbsp;&nbsp;&nbsp;
+  <img src="screenshots/viewer.png" alt="Web Viewer" width="440" />
+</p>
+<p align="center">
+  <em>Left: Chrome extension popup &nbsp;|&nbsp; Right: Web viewer (localhost:3050)</em>
+</p>
+
+---
+
 ## What It Does
 
 1. **🏷️ Keyword Collection** — Chrome extension auto-captures X posts matching your keywords as you scroll
