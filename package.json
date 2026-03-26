@@ -1,0 +1,12 @@
+{
+  "name": "x-post-collector",
+  "version": "2.1.0",
+  "description": "Auto-collect X/Twitter posts by keyword. Chrome extension + local viewer.",
+  "main": "server.js",
+  "scripts": {
+    "start": "node server.js"
+  },
+  "dependencies": {
+    "express": "^4.18.2"
+  }
+}

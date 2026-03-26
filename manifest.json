@@ -1,13 +1,11 @@
 {
   "manifest_version": 3,
   "name": "X Post Collector",
-  "version": "2.0.0",
-  "description": "Auto-collect X/Twitter posts by customizable keywords. Send to Google Sheets via GAS webhook or Sheets API.",
+  "version": "3.0.0",
+  "description": "Auto-collect X/Twitter posts by keyword. Local-first storage with OpenClaw AI integration.",
   "permissions": ["storage", "activeTab"],
   "host_permissions": [
     "https://x.com/*",
-    "https://script.google.com/*",
-    "https://script.googleusercontent.com/*",
     "http://localhost:3050/*"
   ],
   "background": {

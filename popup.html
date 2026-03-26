@@ -116,7 +116,7 @@
     </div>
     <div class="seg">
       <button class="seg-btn on" data-p="keywords">🏷️ Keywords</button>
-      <button class="seg-btn" data-p="settings">⚙️ Settings</button>
+      <!-- Settings tab removed (no webhook) -->
       <button class="seg-btn" data-p="logs">📋 Logs</button>
     </div>
     <div class="pane on" id="p-keywords">
@@ -149,22 +149,7 @@
         </div>
       </div>
     </div>
-    <div class="pane" id="p-settings">
-      <div class="s-card">
-        <label>GAS Webhook URL</label>
-        <input id="webhookUrl" type="text" placeholder="https://script.google.com/macros/s/…/exec">
-        <div class="guide">
-          <div class="g-title">📋 Quick Setup</div>
-          <ol>
-            <li>Open Google Apps Script → New Project</li>
-            <li>Paste code from <code>gas-endpoint.js</code></li>
-            <li>Deploy → Web App → Anyone</li>
-            <li>Copy URL → paste above</li>
-          </ol>
-        </div>
-      </div>
-      <button class="save" id="saveBtn">Save Settings</button>
-    </div>
+    <!-- Settings pane removed (no webhook) -->
     <div class="pane" id="p-logs">
       <div class="log-scroll" id="logs"></div>
     </div>

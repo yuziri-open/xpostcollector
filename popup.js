@@ -12,7 +12,7 @@ const storage = {
 };
 
 const DEFAULTS = {
-  enabled:true, collectedCount:0, recentLogs:[], webhookUrl:'',
+  enabled:true, collectedCount:0, collectedDate:'', recentLogs:[],
   filterKeywords:['claude','codex','claude code','ai','chatgpt','perplexity','openai','anthropic','gemini','gpt','llm','cursor','copilot','midjourney','stable diffusion','sora','devin','vibe coding','agent','agi'],
   highlightKeywords:['openclaw','manus','genspark']
 };
@@ -32,6 +32,15 @@ document.addEventListener('DOMContentLoaded', ()=>{ init(); });
 
 async function init(){
   state=await storage.get(DEFAULTS);
+
+  // Reset count if date changed (show today only)
+  const today = new Date().toISOString().slice(0, 10);
+  if (state.collectedDate !== today) {
+    state.collectedCount = 0;
+    state.recentLogs = [];
+    await storage.set({ collectedCount: 0, recentLogs: [], collectedDate: today });
+  }
+
   render();
   bindEvents();
 }
@@ -40,7 +49,6 @@ function render(){
   $('enabled').checked=!!state.enabled;
   updateStatus(state.enabled);
   $('count').textContent=state.collectedCount||0;
-  $('webhookUrl').value=state.webhookUrl||'';
   renderChips('filter',state.filterKeywords||[]);
   renderChips('highlight',state.highlightKeywords||[]);
   renderLogs(state.recentLogs||[]);
@@ -72,13 +80,6 @@ function bindEvents(){
   // Presets
   document.querySelectorAll('[data-preset]').forEach(btn=>{
     btn.addEventListener('click',()=>applyPreset(btn.dataset.preset));
-  });
-
-  // Save
-  $('saveBtn').addEventListener('click',async()=>{
-    await storage.set({webhookUrl:$('webhookUrl').value.trim()});
-    try{await chrome.runtime.sendMessage({type:'settings-updated'});}catch{}
-    toast('Settings saved ✓');
   });
 
   // Storage change listener

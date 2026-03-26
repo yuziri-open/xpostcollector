@@ -1,0 +1,316 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>X Post Collector</title>
+  <link rel="icon" href="/icons/icon-48.png" type="image/png">
+  <style>
+    :root {
+      --bg:#f2f2f7;--white:#ffffff;
+      --glass:rgba(255,255,255,0.72);--glass-border:rgba(0,0,0,0.06);
+      --glass-shadow:0 2px 16px rgba(0,0,0,0.04),0 0 1px rgba(0,0,0,0.08);
+      --text:#1d1d1f;--text-2:#86868b;--text-3:#aeaeb2;
+      --blue:#007aff;--blue-soft:rgba(0,122,255,0.10);--blue-light:rgba(0,122,255,0.06);
+      --green:#34c759;--green-soft:rgba(52,199,89,0.10);
+      --orange:#ff9500;--orange-soft:rgba(255,149,0,0.10);
+      --red:#ff3b30;--purple:#af52de;
+      --r:16px;--r-sm:12px;--r-xs:8px;
+    }
+    *{margin:0;padding:0;box-sizing:border-box}
+    body{font-family:-apple-system,BlinkMacSystemFont,'SF Pro Display','Helvetica Neue',sans-serif;background:var(--bg);color:var(--text);min-height:100vh;-webkit-font-smoothing:antialiased}
+    .mesh{position:fixed;inset:0;pointer-events:none;z-index:0;background:radial-gradient(ellipse 500px 400px at 10% 10%,rgba(0,122,255,0.06) 0%,transparent 70%),radial-gradient(ellipse 400px 500px at 90% 90%,rgba(175,82,222,0.05) 0%,transparent 70%),radial-gradient(ellipse 300px 300px at 50% 30%,rgba(90,200,250,0.04) 0%,transparent 70%)}
+    .app{position:relative;z-index:1;max-width:720px;margin:0 auto;padding:20px}
+    .header{display:flex;align-items:center;gap:14px;margin-bottom:20px;padding:20px;background:var(--glass);backdrop-filter:blur(40px) saturate(180%);-webkit-backdrop-filter:blur(40px) saturate(180%);border:0.5px solid var(--glass-border);border-radius:var(--r);box-shadow:var(--glass-shadow)}
+    .logo{width:44px;height:44px;border-radius:12px;object-fit:cover;box-shadow:0 4px 14px rgba(0,0,0,0.1)}
+    .header h1{font-size:20px;font-weight:700;letter-spacing:-0.5px}
+    .header p{font-size:12px;color:var(--text-2)}
+    .stats{display:flex;gap:10px;margin-bottom:20px}
+    .stat{flex:1;padding:16px 12px;text-align:center;background:var(--glass);backdrop-filter:blur(30px) saturate(150%);-webkit-backdrop-filter:blur(30px) saturate(150%);border:0.5px solid var(--glass-border);border-radius:var(--r-sm);box-shadow:var(--glass-shadow)}
+    .stat .n{font-size:28px;font-weight:700;letter-spacing:-0.5px}
+    .stat .n.blue{color:var(--blue)}.stat .n.green{color:var(--green)}.stat .n.orange{color:var(--orange)}
+    .stat .l{font-size:10px;color:var(--text-3);text-transform:uppercase;letter-spacing:0.8px;margin-top:3px;font-weight:600}
+    /* Keyword chips */
+    .kw-section{margin-bottom:16px}
+    .kw-section-title{font-size:10px;font-weight:600;color:var(--text-3);text-transform:uppercase;letter-spacing:0.8px;margin-bottom:8px}
+    .kw-row{display:flex;flex-wrap:wrap;gap:6px}
+    .kw-chip{padding:5px 12px;border-radius:20px;font-size:11px;font-weight:500;background:var(--white);color:var(--text-2);border:0.5px solid rgba(0,0,0,0.08);cursor:pointer;transition:all 0.15s;box-shadow:0 1px 3px rgba(0,0,0,0.03)}
+    .kw-chip:hover{background:var(--blue-light);color:var(--blue);border-color:rgba(0,122,255,0.15)}
+    .kw-chip.on{background:var(--blue-soft);color:var(--blue);font-weight:600;border-color:rgba(0,122,255,0.2)}
+    .kw-chip .cnt{color:var(--text-3);margin-left:4px;font-size:10px}
+    /* Search & Filters */
+    .toolbar{display:flex;gap:8px;margin-bottom:16px;flex-wrap:wrap}
+    .search-box{flex:1;min-width:200px;position:relative}
+    .search-box input{width:100%;padding:11px 14px 11px 38px;background:var(--white);border:0.5px solid rgba(0,0,0,0.1);border-radius:var(--r-xs);color:var(--text);font-size:14px;font-family:inherit;outline:none}
+    .search-box input:focus{border-color:var(--blue);box-shadow:0 0 0 3px rgba(0,122,255,0.1)}
+    .search-box input::placeholder{color:var(--text-3)}
+    .search-box .ico{position:absolute;left:12px;top:50%;transform:translateY(-50%);font-size:14px;color:var(--text-3);pointer-events:none}
+    .filter-btn{padding:10px 16px;background:var(--white);border:0.5px solid rgba(0,0,0,0.08);border-radius:var(--r-xs);font-size:12px;font-weight:500;color:var(--text-2);cursor:pointer;font-family:inherit;transition:all 0.15s;box-shadow:0 1px 3px rgba(0,0,0,0.04)}
+    .filter-btn:hover{background:var(--blue-light);color:var(--blue);border-color:rgba(0,122,255,0.2)}
+    .filter-btn.on{background:var(--blue-soft);color:var(--blue);border-color:rgba(0,122,255,0.2);font-weight:600}
+    .sort-row{display:flex;gap:4px;margin-bottom:16px;background:rgba(0,0,0,0.04);border-radius:var(--r-xs);padding:2px}
+    .sort-btn{flex:1;padding:6px 0;text-align:center;font-size:11px;font-weight:500;color:var(--text-2);cursor:pointer;border:none;background:none;border-radius:6px;transition:all 0.2s;font-family:inherit}
+    .sort-btn.on{background:var(--white);color:var(--text);font-weight:600;box-shadow:0 1px 4px rgba(0,0,0,0.08),0 0 0 0.5px rgba(0,0,0,0.04)}
+    .post-list{display:flex;flex-direction:column;gap:10px}
+    .post{padding:16px;background:var(--glass);backdrop-filter:blur(30px) saturate(150%);-webkit-backdrop-filter:blur(30px) saturate(150%);border:0.5px solid var(--glass-border);border-radius:var(--r);box-shadow:var(--glass-shadow);transition:all 0.2s}
+    .post:hover{box-shadow:0 4px 24px rgba(0,0,0,0.06)}
+    .post.hl{border-left:3px solid var(--orange)}
+    .post-top{display:flex;align-items:center;gap:10px;margin-bottom:8px}
+    .post-av{width:40px;height:40px;border-radius:50%;background:linear-gradient(135deg,#e8e8ed,#f5f5f7);border:0.5px solid rgba(0,0,0,0.06);display:flex;align-items:center;justify-content:center;font-size:16px;flex-shrink:0}
+    .post-author{flex:1;min-width:0}
+    .post-name{font-size:14px;font-weight:600}
+    .post-handle{font-size:12px;color:var(--blue)}
+    .post-time{font-size:10px;color:var(--text-3)}
+    .post-text{font-size:14px;line-height:1.7;margin-bottom:10px;word-break:break-word}
+    .post-metrics{display:flex;gap:16px;font-size:12px;color:var(--text-2)}
+    .post-metrics span{display:flex;align-items:center;gap:4px}
+    .post-footer{display:flex;align-items:center;justify-content:space-between;margin-top:10px;padding-top:10px;border-top:0.5px solid rgba(0,0,0,0.04);flex-wrap:wrap;gap:8px}
+    .post-link{font-size:11px;color:var(--blue);text-decoration:none;font-weight:500}
+    .post-link:hover{text-decoration:underline}
+    .post-hl-badge{font-size:10px;padding:2px 8px;border-radius:10px;background:var(--orange-soft);color:#c77700;font-weight:600}
+    .openclaw-btn{padding:5px 12px;border-radius:8px;font-size:11px;font-weight:600;cursor:pointer;border:0.5px solid rgba(0,122,255,0.2);background:var(--blue-soft);color:var(--blue);transition:all 0.15s;font-family:inherit}
+    .openclaw-btn:hover{background:var(--blue);color:white;box-shadow:0 2px 8px rgba(0,122,255,0.3)}
+    .openclaw-btn.sent{background:var(--green-soft);color:var(--green);border-color:rgba(52,199,89,0.2);cursor:default}
+    .pager{display:flex;justify-content:center;gap:8px;margin-top:20px;padding-bottom:40px}
+    .pager button{padding:8px 18px;border:0.5px solid rgba(0,0,0,0.08);border-radius:var(--r-xs);background:var(--white);color:var(--text-2);font-size:12px;font-weight:500;cursor:pointer;font-family:inherit;box-shadow:0 1px 3px rgba(0,0,0,0.04);transition:all 0.15s}
+    .pager button:hover{background:var(--blue-light);color:var(--blue)}
+    .pager button:disabled{opacity:0.3;cursor:not-allowed}
+    .pager .info{padding:8px 12px;font-size:12px;color:var(--text-3)}
+    .empty{text-align:center;padding:60px 20px;color:var(--text-3)}
+    .empty .icon{font-size:48px;margin-bottom:12px;opacity:0.5}
+    .empty p{font-size:14px;line-height:1.6}
+    .toast{position:fixed;bottom:20px;left:50%;transform:translateX(-50%) translateY(16px);padding:10px 22px;border-radius:22px;font-size:12px;font-weight:600;background:var(--text);color:white;opacity:0;transition:all 0.35s cubic-bezier(0.4,0,0.2,1);z-index:100;box-shadow:0 6px 20px rgba(0,0,0,0.15)}
+    .toast.show{opacity:1;transform:translateX(-50%) translateY(0)}
+    @media(max-width:480px){.app{padding:12px}.stats{flex-direction:column}}
+  </style>
+</head>
+<body>
+  <div class="mesh"></div>
+  <div class="app">
+    <div class="header">
+      <img class="logo" src="/icons/icon-128.png" alt="X Post Collector">
+      <div>
+        <h1>Post Collector</h1>
+        <p id="subtitle">Browse your collected X posts</p>
+      </div>
+    </div>
+    <div class="stats" id="stats"></div>
+    <div class="kw-section" id="kwSection" style="display:none">
+      <div class="kw-section-title">🔥 Trending Keywords (today)</div>
+      <div class="kw-row" id="kwRow"></div>
+    </div>
+    <div class="toolbar">
+      <div class="search-box">
+        <span class="ico">🔍</span>
+        <input id="search" placeholder="Search posts, handles, keywords…">
+      </div>
+      <button class="filter-btn" id="hlFilter">⭐ Highlighted</button>
+    </div>
+    <div class="sort-row" id="sortRow">
+      <button class="sort-btn on" data-sort="newest">🕐 Newest</button>
+      <button class="sort-btn" data-sort="likes">♡ Likes</button>
+      <button class="sort-btn" data-sort="retweets">🔄 Reposts</button>
+      <button class="sort-btn" data-sort="views">👁 Views</button>
+    </div>
+    <div class="post-list" id="posts"></div>
+    <div class="pager" id="pager"></div>
+  </div>
+  <div class="toast" id="toast"></div>
+
+  <script>
+    let currentSort = 'newest';
+    let currentOffset = 0;
+    let currentKW = '';
+    let hlOnly = false;
+    const LIMIT = 20;
+    let searchTimer = null;
+    // Store post data for openclaw send
+    let postsCache = {};
+
+    // ── Init ──
+    document.addEventListener('DOMContentLoaded', () => {
+      loadStats();
+      loadKeywords();
+      loadPosts();
+      setInterval(() => { loadStats(); loadKeywords(); loadPosts(); }, 30000);
+
+      document.getElementById('search').addEventListener('input', () => {
+        clearTimeout(searchTimer);
+        searchTimer = setTimeout(() => { currentOffset = 0; loadPosts(); }, 300);
+      });
+      document.getElementById('hlFilter').addEventListener('click', toggleHL);
+      document.getElementById('sortRow').addEventListener('click', e => {
+        const btn = e.target.closest('.sort-btn');
+        if (btn) setSort(btn.dataset.sort);
+      });
+    });
+
+    // ── Stats ──
+    async function loadStats() {
+      try {
+        const res = await fetch('/api/stats');
+        const data = await res.json();
+        document.getElementById('stats').innerHTML = `
+          <div class="stat"><div class="n blue">${data.todayCount||0}</div><div class="l">Today</div></div>
+          <div class="stat"><div class="n green">${data.total||0}</div><div class="l">All Time</div></div>
+          <div class="stat"><div class="n orange">${data.highlighted||0}</div><div class="l">Highlighted</div></div>
+        `;
+        document.getElementById('subtitle').textContent = `${data.days?.length||0} day(s) archived · ${data.total||0} posts total`;
+      } catch {}
+    }
+
+    // ── Keywords ──
+    async function loadKeywords() {
+      try {
+        const res = await fetch('/api/keywords');
+        const data = await res.json();
+        const section = document.getElementById('kwSection');
+        const row = document.getElementById('kwRow');
+        if (!data.keywords?.length) { section.style.display = 'none'; return; }
+        section.style.display = 'block';
+        row.innerHTML = data.keywords.map(k =>
+          `<span class="kw-chip${currentKW===k.word?' on':''}" data-kw="${esc(k.word)}">${esc(k.word)}<span class="cnt">${k.count}</span></span>`
+        ).join('');
+        row.querySelectorAll('.kw-chip').forEach(chip => {
+          chip.addEventListener('click', () => filterKW(chip.dataset.kw));
+        });
+      } catch {}
+    }
+
+    function filterKW(kw) {
+      currentKW = currentKW === kw ? '' : kw;
+      currentOffset = 0;
+      // Set search box to keyword
+      document.getElementById('search').value = currentKW;
+      document.querySelectorAll('.kw-chip').forEach(c => c.classList.toggle('on', c.dataset.kw === currentKW));
+      loadPosts();
+    }
+
+    // ── Posts ──
+    async function loadPosts() {
+      const q = document.getElementById('search').value.trim();
+      let url = `/api/posts?date=today&limit=${LIMIT}&offset=${currentOffset}`;
+      if (q) url += `&q=${encodeURIComponent(q)}`;
+      if (hlOnly) url += `&highlighted=true`;
+      if (currentSort !== 'newest') url += `&sort=${currentSort}`;
+      try {
+        const res = await fetch(url);
+        const data = await res.json();
+        // Cache posts for openclaw send
+        for (const p of data.posts) postsCache[p.id] = p;
+        renderPosts(data.posts, data.total, data.offset);
+      } catch {
+        document.getElementById('posts').innerHTML = `<div class="empty"><div class="icon">📭</div><p>Could not connect to server.</p></div>`;
+      }
+    }
+
+    function renderPosts(posts, total, offset) {
+      const container = document.getElementById('posts');
+      if (!posts.length) {
+        container.innerHTML = `<div class="empty"><div class="icon">✨</div><p>No posts found.<br>Open X and start scrolling!</p></div>`;
+        document.getElementById('pager').innerHTML = '';
+        return;
+      }
+      container.innerHTML = posts.map(p => {
+        const time = p.collectedAt ? new Date(p.collectedAt).toLocaleString('ja-JP',{month:'short',day:'numeric',hour:'2-digit',minute:'2-digit'}) : '';
+        return `
+        <div class="post${p.highlighted?' hl':''}">
+          <div class="post-top">
+            <div class="post-av">𝕏</div>
+            <div class="post-author">
+              <div class="post-name">${esc(p.displayName||'')}</div>
+              <div class="post-handle">${esc(p.handle||'')}</div>
+            </div>
+            <div class="post-time">${time}</div>
+          </div>
+          <div class="post-text">${escLink(p.text||'')}</div>
+          <div class="post-metrics">
+            <span>♡ ${p.likes||0}</span>
+            <span>🔄 ${p.retweets||0}</span>
+            <span>💬 ${p.replies||0}</span>
+            <span>👁 ${p.views||0}</span>
+            ${p.hasMedia?'<span>📷</span>':''}
+          </div>
+          <div class="post-footer">
+            <div style="display:flex;gap:8px;align-items:center">
+              <a class="post-link" href="${esc(p.url||'')}" target="_blank" rel="noopener">View on X ↗</a>
+              ${p.highlighted?'<span class="post-hl-badge">⭐ Highlighted</span>':''}
+            </div>
+            <button class="openclaw-btn" data-id="${esc(p.id)}" title="Send to OpenClaw for analysis">🦞 Send to OpenClaw</button>
+          </div>
+        </div>`;
+      }).join('');
+
+      // Bind openclaw buttons
+      container.querySelectorAll('.openclaw-btn').forEach(btn => {
+        btn.addEventListener('click', () => sendToOpenClaw(btn));
+      });
+
+      // Pager
+      const pages = Math.ceil(total / LIMIT);
+      const page = Math.floor(offset / LIMIT) + 1;
+      const pager = document.getElementById('pager');
+      pager.innerHTML = `
+        <button id="prevBtn" ${offset===0?'disabled':''}>← Prev</button>
+        <span class="info">${page} / ${pages} (${total} posts)</span>
+        <button id="nextBtn" ${offset+LIMIT>=total?'disabled':''}>Next →</button>
+      `;
+      document.getElementById('prevBtn').addEventListener('click', () => goPage(offset - LIMIT));
+      document.getElementById('nextBtn').addEventListener('click', () => goPage(offset + LIMIT));
+    }
+
+    // ── Send to OpenClaw ──
+    async function sendToOpenClaw(btn) {
+      const id = btn.dataset.id;
+      const post = postsCache[id];
+      if (!post) return;
+      btn.disabled = true;
+      btn.textContent = '⏳ Sending…';
+      try {
+        const res = await fetch('/api/send-to-openclaw', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ post })
+        });
+        const data = await res.json();
+        if (data.ok) {
+          btn.textContent = 'Sent!';
+          btn.classList.add('sent');
+          toast('Sent to OpenClaw inbox!');
+        } else {
+          btn.textContent = 'Error';
+          setTimeout(() => { btn.textContent = 'Send to OpenClaw'; btn.disabled = false; }, 2000);
+        }
+      } catch {
+        btn.textContent = 'Error';
+        setTimeout(() => { btn.textContent = 'Send to OpenClaw'; btn.disabled = false; }, 2000);
+      }
+    }
+
+    // ── Controls ──
+    function setSort(s) {
+      currentSort = s; currentOffset = 0;
+      document.querySelectorAll('.sort-btn').forEach(b => b.classList.toggle('on', b.dataset.sort === s));
+      loadPosts();
+    }
+    function toggleHL() {
+      hlOnly = !hlOnly;
+      document.getElementById('hlFilter').classList.toggle('on', hlOnly);
+      currentOffset = 0;
+      loadPosts();
+    }
+    function goPage(off) { currentOffset = Math.max(0, off); loadPosts(); }
+
+    // ── Helpers ──
+    function esc(s) { const d = document.createElement('div'); d.textContent = s; return d.innerHTML; }
+    function escLink(s) {
+      return esc(s).replace(/(https?:\/\/[^\s<]+)/g, '<a href="$1" target="_blank" rel="noopener" style="color:var(--blue)">$1</a>');
+    }
+    function toast(msg) {
+      const t = document.getElementById('toast');
+      t.textContent = msg; t.classList.add('show');
+      setTimeout(() => t.classList.remove('show'), 2200);
+    }
+  </script>
+</body>
+</html>

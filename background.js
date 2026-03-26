@@ -10,7 +10,6 @@ const DEFAULTS = {
   enabled: true,
   collectedCount: 0,
   recentLogs: [],
-  webhookUrl: "",
   filterKeywords: DEFAULT_FILTER_KEYWORDS,
   highlightKeywords: DEFAULT_HIGHLIGHT_KEYWORDS
 };
@@ -56,67 +55,39 @@ async function handleSubmitPosts(posts) {
   const accepted = posts.filter((p) => p && p.url);
   if (!accepted.length) return { accepted: 0 };
 
-  // Always save locally first
-  const nextCount = Number(settings.collectedCount || 0) + accepted.length;
+  // Save to local server (primary storage, daily JSON files)
+  let serverTotal = 0;
+  try {
+    const result = await sendToLocal(accepted);
+    serverTotal = result.total || 0;
+  } catch (e) {
+    console.debug("[X-Collector] Local server not available:", e.message);
+  }
+
+  // Sync count with server's today count; fallback to local increment
+  const todayCount = serverTotal || (Number(settings.collectedCount || 0) + accepted.length);
   const mergedLogs = [...accepted, ...(settings.recentLogs || [])].slice(0, 50);
 
   await chrome.storage.local.set({
-    collectedCount: nextCount,
+    collectedCount: todayCount,
+    collectedDate: new Date().toISOString().slice(0, 10),
     recentLogs: mergedLogs
   });
-
-  // Send to local viewer app (always, non-blocking)
-  sendToLocal(accepted).catch(e => console.debug("local save skipped", e));
-
-  // Send to GAS Webhook (optional)
-  if (settings.webhookUrl) {
-    sendToGasWebhook(settings.webhookUrl, accepted).catch(e => console.warn("webhook failed", e));
-  }
 
   return { accepted: accepted.length };
 }
 
 async function sendToLocal(posts) {
-  try {
-    const res = await fetch("http://localhost:3050/api/posts", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      mode: "cors",
-      body: JSON.stringify({ posts })
-    });
-    if (res.ok) {
-      const data = await res.json();
-      console.log("[X-Collector] Saved", data.added, "posts to local viewer (total:", data.total, ")");
-    }
-  } catch (e) {
-    // viewer not running — silently skip
-    console.debug("[X-Collector] Local viewer not available:", e.message);
-  }
-}
-
-async function sendToGasWebhook(webhookUrl, posts) {
-  if (!webhookUrl) {
-    console.warn("Webhook URL is not configured.");
-    return false;
-  }
-
-  try {
-    const res = await fetch(webhookUrl, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ posts })
-    });
-
-    if (!res.ok) {
-      console.warn("GAS webhook failed", res.status);
-      return false;
-    }
-
-    return true;
-  } catch (error) {
-    console.warn("GAS webhook error", error);
-    return false;
-  }
+  const res = await fetch("http://localhost:3050/api/posts", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    mode: "cors",
+    body: JSON.stringify({ posts })
+  });
+  if (!res.ok) throw new Error(`Server ${res.status}`);
+  const data = await res.json();
+  console.log("[X-Collector] Saved", data.added, "posts (today:", data.total, ")");
+  return data;
 }
 
 
